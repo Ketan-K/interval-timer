@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Material Timer & Counter</title>
+    <!-- Dynamic Favicon SVG -->
+    <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%233b82f6'/></svg>">
+    <!-- Google Fonts: Google Sans & Roboto Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Google Material Design 3 Dark Tokens */
+            --md-sys-color-background: #111318;
+            --md-sys-color-surface: #1a1d24;
+            --md-sys-color-surface-container: #20242e;
+            --md-sys-color-surface-container-high: #292e3a;
+            --md-sys-color-surface-container-highest: #333947;
+            --md-sys-color-outline: #434854;
+            --md-sys-color-outline-variant: rgba(255, 255, 255, 0.08);
+            --md-sys-color-primary: #3b82f6;
+            --md-sys-color-primary-glow: rgba(59, 130, 246, 0.4);
+            --md-sys-color-primary-container: #1d4ed8;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-secondary-container: #2c313d;
+            --md-sys-color-on-secondary: #e2e8f0;
+            --md-sys-color-on-surface: #e6e8ee;
+            --md-sys-color-on-surface-variant: #949eb0;
+            --md-sys-color-accent-green: #34a853;
+            --md-sys-color-accent-green-glow: rgba(52, 168, 83, 0.4);
+            --md-sys-color-accent-amber: #fbbc04;
+            --md-sys-color-accent-amber-glow: rgba(251, 188, 4, 0.4);
+            --md-sys-color-accent-red: #ea4335;
+            --font-family-google: 'Google Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-family-mono: 'Roboto Mono', 'Google Sans', monospace;
+
+            /* Hero Ring Accent */
+            --ring-accent-color: var(--md-sys-color-primary);
+            --ring-accent-glow: var(--md-sys-color-primary-glow);
+        }
+
+        /* Light Theme Alternative */
+        [data-theme="light"] {
+            --md-sys-color-background: #f0f4f9;
+            --md-sys-color-surface: #ffffff;
+            --md-sys-color-surface-container: #f8fafc;
+            --md-sys-color-surface-container-high: #edf2f7;
+            --md-sys-color-surface-container-highest: #e2e8f0;
+            --md-sys-color-outline: #cbd5e1;
+            --md-sys-color-outline-variant: rgba(0, 0, 0, 0.08);
+            --md-sys-color-primary: #1a73e8;
+            --md-sys-color-primary-glow: rgba(26, 115, 232, 0.25);
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-secondary-container: #e8eaed;
+            --md-sys-color-on-secondary: #1f2937;
+            --md-sys-color-on-surface: #1f2937;
+            --md-sys-color-on-surface-variant: #5f6368;
+            --md-sys-color-accent-green: #1e8e3e;
+            --md-sys-color-accent-amber: #e37400;
+        }
+
+        body[data-phase="rest"] {
+            --ring-accent-color: var(--md-sys-color-accent-amber);
+            --ring-accent-glow: var(--md-sys-color-accent-amber-glow);
+        }
+
+        body[data-phase="finished"] {
+            --ring-accent-color: var(--md-sys-color-accent-green);
+            --ring-accent-glow: var(--md-sys-color-accent-green-glow);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family-google);
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-surface);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px 16px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 28%, rgba(59, 130, 246, 0.09) 0%, transparent 68%);
+            transition: background-color 0.3s ease;
+        }
+
+        /* Fullscreen */
+        body.is-fullscreen {
+            padding: 0;
+            justify-content: center;
+        }
+
+        body.is-fullscreen .timer-card {
+            max-width: 720px;
+            box-shadow: none;
+            border: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        /* Top Bar Controls */
+        .utility-header {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .icon-btn {
+            background: var(--md-sys-color-surface);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .icon-btn:hover {
+            color: var(--md-sys-color-on-surface);
+            background: var(--md-sys-color-surface-container-high);
+            transform: scale(1.06);
+        }
+
+        /* Main Material 3 Card */
+        .timer-card {
+            background: var(--md-sys-color-surface-container);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: 36px;
+            padding: 44px 36px 32px 36px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 24px 56px -12px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.04);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.3s ease, border-color 0.3s ease, max-width 0.3s ease;
+        }
+
+        /* ========================================================= */
+        /* HERO SECTION: Large Prominent Circular Dial               */
+        /* ========================================================= */
+        .dial-container {
+            position: relative;
+            width: 310px;
+            height: 310px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 6px 0 20px 0;
+        }
+
+        @media (max-width: 420px) {
+            .dial-container {
+                width: 270px;
+                height: 270px;
+            }
+        }
+
+        .dial-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .dial-track {
+            fill: none;
+            stroke: var(--md-sys-color-surface-container-high);
+            stroke-width: 10;
+        }
+
+        .dial-progress {
+            fill: none;
+            stroke: var(--ring-accent-color);
+            stroke-width: 10;
+            stroke-linecap: round;
+            /* Circumference = 2 * PI * 135 ≈ 848.23 */
+            stroke-dasharray: 848.23;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 0.08s linear, stroke 0.3s ease, filter 0.3s ease;
+            filter: drop-shadow(0 0 12px var(--ring-accent-glow));
+        }
+
+        /* 4 Cardinal Google Clock Guide Dots */
+        .cardinal-dot {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--md-sys-color-outline);
+            opacity: 0.65;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+        }
+
+        .dot-top { top: -16px; left: 50%; transform: translateX(-50%); }
+        .dot-right { right: -16px; top: 50%; transform: translateY(-50%); }
+        .dot-bottom { bottom: -16px; left: 50%; transform: translateX(-50%); }
+        .dot-left { left: -16px; top: 50%; transform: translateY(-50%); }
+
+        .dial-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            user-select: none;
+        }
+
+        /* Hero Digits */
+        .time-display {
+            font-family: var(--font-family-google);
+            font-size: 56px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: var(--md-sys-color-on-surface);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.05;
+        }
+
+        @media (max-width: 420px) {
+            .time-display {
+                font-size: 46px;
+            }
+        }
+
+        .round-subtext {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-top: 10px;
+            letter-spacing: 0.01em;
+            transition: color 0.25s ease;
+        }
+
+        body[data-phase="rest"] .round-subtext {
+            color: var(--md-sys-color-accent-amber);
+            font-weight: 600;
+        }
+
+        /* Round Progress Pips */
+        .round-pips-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            max-width: 320px;
+        }
+
+        .pip {
+            width: 20px;
+            height: 5px;
+            border-radius: 999px;
+            background-color: var(--md-sys-color-surface-container-high);
+            transition: all 0.25s ease;
+        }
+
+        .pip.active {
+            background-color: var(--ring-accent-color);
+            box-shadow: 0 0 8px var(--ring-accent-glow);
+            transform: scaleX(1.15);
+        }
+
+        .pip.completed {
+            background-color: var(--md-sys-color-accent-green);
+            opacity: 0.85;
+        }
+
+        /* Quick Preset Chips (+15s, +30s, +1m) */
+        .preset-chips-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .preset-chip {
+            background: var(--md-sys-color-surface-container-high);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            font-family: var(--font-family-google);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .preset-chip:hover {
+            background: var(--md-sys-color-surface-container-highest);
+            color: var(--md-sys-color-primary);
+            border-color: var(--md-sys-color-primary);
+            transform: translateY(-1px);
+        }
+
+        /* Divider */
+        .divider {
+            width: 100%;
+            height: 1px;
+            background-color: var(--md-sys-color-outline-variant);
+            margin: 4px 0 16px 0;
+        }
+
+        /* Metrics Row (Completed & Status) */
+        .metrics-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+            letter-spacing: 0.02em;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--md-sys-color-accent-amber);
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-running .status-badge-dot {
+            background-color: var(--ring-accent-color);
+            box-shadow: 0 0 8px var(--ring-accent-color);
+        }
+
+        .status-paused .status-badge-dot {
+            background-color: var(--md-sys-color-accent-amber);
+        }
+
+        .status-finished .status-badge-dot {
+            background-color: var(--md-sys-color-accent-green);
+            box-shadow: 0 0 8px var(--md-sys-color-accent-green);
+        }
+
+        /* ========================================================= */
+        /* COMPACT SETTINGS & CONTROLS (Kept Secondary to Hero Dial) */
+        /* ========================================================= */
+        .settings-compact-container {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.14);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: 20px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+        }
+
+        [data-theme="light"] .settings-compact-container {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .sliders-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 520px) {
+            .sliders-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .slider-val-badge {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--md-sys-color-on-surface);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .range-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 18px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--md-sys-color-surface-container-highest);
+            border-radius: 999px;
+            outline: none;
+            margin: 0;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            cursor: pointer;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.28);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border: none;
+            border-radius: 50%;
+            background: var(--md-sys-color-primary);
+            cursor: pointer;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .slider-fill-track {
+            position: absolute;
+            left: 0;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--md-sys-color-primary);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #rest-fill {
+            background: var(--md-sys-color-accent-amber);
+        }
+        #rest-slider::-webkit-slider-thumb {
+            background: var(--md-sys-color-accent-amber);
+            box-shadow: 0 0 0 3px rgba(251, 188, 4, 0.2);
+        }
+        #rest-slider::-moz-range-thumb {
+            background: var(--md-sys-color-accent-amber);
+            box-shadow: 0 0 0 3px rgba(251, 188, 4, 0.2);
+        }
+
+        /* Compact Toggles */
+        .toggles-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid var(--md-sys-color-outline-variant);
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        .m3-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+
+        .m3-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .m3-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--md-sys-color-surface-container-highest);
+            border: 1px solid var(--md-sys-color-outline);
+            transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 999px;
+        }
+
+        .m3-slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--md-sys-color-on-surface-variant);
+            transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+        }
+
+        .m3-switch input:checked + .m3-slider {
+            background-color: var(--md-sys-color-primary);
+            border-color: var(--md-sys-color-primary);
+        }
+
+        .m3-switch input:checked + .m3-slider:before {
+            transform: translateX(16px);
+            background-color: #ffffff;
+        }
+
+        /* Action Buttons */
+        .actions-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .btn-pill {
+            font-family: var(--font-family-google);
+            border: none;
+            outline: none;
+            border-radius: 9999px;
+            padding: 12px 36px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: 0 2px 10px var(--md-sys-color-primary-glow);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--md-sys-color-primary-glow);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            filter: brightness(0.95);
+        }
+
+        .btn-secondary {
+            background-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--md-sys-color-surface-container-highest);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        /* Material Ripple */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-effect 0.55s linear;
+            background-color: rgba(255, 255, 255, 0.35);
+            pointer-events: none;
+        }
+
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Keyboard Hints */
+        .shortcuts-hint {
+            margin-top: 18px;
+            font-size: 11px;
+            color: var(--md-sys-color-on-surface-variant);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.75;
+        }
+
+        kbd {
+            background: var(--md-sys-color-surface-container-highest);
+            color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-family: var(--font-family-mono);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Utility Header (Fullscreen, Theme & Audio Controls) -->
+    <header class="utility-header">
+        <button id="fullscreen-toggle-btn" class="icon-btn" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">
+            <svg id="fullscreen-icon-expand" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <polyline points="9 21 3 21 3 15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+            <svg id="fullscreen-icon-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <polyline points="4 14 10 14 10 20"></polyline>
+                <polyline points="20 10 14 10 14 4"></polyline>
+                <line x1="14" y1="10" x2="21" y2="3"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+        </button>
+
+        <button id="sound-toggle-btn" class="icon-btn" title="Toggle Sound Feedback (M)" aria-label="Toggle Sound">
+            <svg id="sound-icon-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+            <svg id="sound-icon-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+        </button>
+
+        <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light / Dark Mode" aria-label="Toggle Theme">
+            <svg id="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+    </header>
+
+    <!-- Main Google Material Card -->
+    <main class="timer-card">
+        
+        <!-- HERO CIRCULAR DIAL (Large & Prominent) -->
+        <div class="dial-container">
+            <!-- 4 Cardinal Reference Dots (12, 3, 6, 9 o'clock) -->
+            <div class="cardinal-dot dot-top"></div>
+            <div class="cardinal-dot dot-right"></div>
+            <div class="cardinal-dot dot-bottom"></div>
+            <div class="cardinal-dot dot-left"></div>
+
+            <svg class="dial-svg" viewBox="0 0 300 300">
+                <!-- Outer Track Ring (r=135) -->
+                <circle class="dial-track" cx="150" cy="150" r="135" />
+                <!-- Dynamic Progress Ring (r=135, circumference ≈ 848.23) -->
+                <circle id="progress-circle" class="dial-progress" cx="150" cy="150" r="135" />
+            </svg>
+
+            <!-- Clean Dial Content -->
+            <div class="dial-content">
+                <div class="time-display" id="time-display">00:30.00</div>
+                <div class="round-subtext" id="round-indicator">Round 1 of 4</div>
+            </div>
+        </div>
+
+        <!-- Round Stepper Progress Pips -->
+        <div class="round-pips-bar" id="round-pips-container"></div>
+
+        <!-- Quick Preset Chips (+15s, +30s, +1m) -->
+        <div class="preset-chips-row">
+            <button class="preset-chip" onclick="addTime(15)">+15s</button>
+            <button class="preset-chip" onclick="addTime(30)">+30s</button>
+            <button class="preset-chip" onclick="addTime(60)">+1m</button>
+        </div>
+
+        <!-- Divider Line -->
+        <div class="divider"></div>
+
+        <!-- Metrics Row (Completed & Status) -->
+        <div class="metrics-grid">
+            <div class="metric-col">
+                <span class="metric-label">Completed</span>
+                <span class="metric-value" id="completed-display">0 / 4 Done</span>
+            </div>
+            <div class="metric-col">
+                <span class="metric-label">Status</span>
+                <span class="metric-value status-paused" id="status-container">
+                    <span class="status-badge-dot"></span>
+                    <span id="status-text">Paused</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- COMPACT SECONDARY SETTINGS & CONTROLS -->
+        <div class="settings-compact-container">
+            <div class="sliders-grid">
+                <!-- Total Rounds Slider -->
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label class="slider-label" for="rounds-slider">Total Rounds</label>
+                        <span class="slider-val-badge" id="rounds-val">4x</span>
+                    </div>
+                    <div class="range-wrapper">
+                        <div class="slider-fill-track" id="rounds-fill"></div>
+                        <input type="range" id="rounds-slider" min="1" max="20" value="4" step="1">
+                    </div>
+                </div>
+
+                <!-- Round Duration Slider -->
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label class="slider-label" for="duration-slider">Round Duration</label>
+                        <span class="slider-val-badge" id="duration-val">30s</span>
+                    </div>
+                    <div class="range-wrapper">
+                        <div class="slider-fill-track" id="duration-fill"></div>
+                        <input type="range" id="duration-slider" min="5" max="180" value="30" step="5">
+                    </div>
+                </div>
+
+                <!-- Rest Interval Slider -->
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label class="slider-label" for="rest-slider">Rest Interval</label>
+                        <span class="slider-val-badge" id="rest-val">10s</span>
+                    </div>
+                    <div class="range-wrapper">
+                        <div class="slider-fill-track" id="rest-fill"></div>
+                        <input type="range" id="rest-slider" min="0" max="60" value="10" step="5">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toggles: Stop after round / Stop after rest -->
+            <div class="toggles-row">
+                <label class="toggle-item" for="toggle-stop-round">
+                    <span class="toggle-label">Stop after round</span>
+                    <span class="m3-switch">
+                        <input type="checkbox" id="toggle-stop-round">
+                        <span class="m3-slider"></span>
+                    </span>
+                </label>
+
+                <label class="toggle-item" for="toggle-stop-rest">
+                    <span class="toggle-label">Stop after rest</span>
+                    <span class="m3-switch">
+                        <input type="checkbox" id="toggle-stop-rest">
+                        <span class="m3-slider"></span>
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Material 3 Pill Action Buttons -->
+        <div class="actions-row">
+            <button id="primary-action-btn" class="btn-pill btn-primary">Start</button>
+            <button id="reset-action-btn" class="btn-pill btn-secondary">Reset</button>
+        </div>
+
+    </main>
+
+    <!-- Keyboard Shortcuts Legend -->
+    <div class="shortcuts-hint">
+        <span><kbd>Space</kbd> Start / Pause</span>
+        <span>•</span>
+        <span><kbd>R</kbd> Reset</span>
+        <span>•</span>
+        <span><kbd>F</kbd> Fullscreen</span>
+    </div>
+
+    <!-- Precision Timer Engine -->
+    <script>
+        const STORAGE_KEY = 'google_interval_timer_cfg';
+
+        const savedCfg = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        let totalRounds = savedCfg.totalRounds || 4;
+        let roundDurationSec = savedCfg.roundDurationSec || 30;
+        let restDurationSec = (savedCfg.restDurationSec !== undefined) ? savedCfg.restDurationSec : 10;
+        let stopAfterRound = savedCfg.stopAfterRound || false;
+        let stopAfterRest = savedCfg.stopAfterRest || false;
+        let soundEnabled = (savedCfg.soundEnabled !== undefined) ? savedCfg.soundEnabled : true;
+        let isLight = (savedCfg.isLight !== undefined) ? savedCfg.isLight : false;
+
+        let currentRound = 1;
+        let completedRounds = 0;
+        let phase = 'work'; // 'work' | 'rest' | 'finished'
+        let isRunning = false;
+        let isFinished = false;
+
+        let activeTargetMs = roundDurationSec * 1000;
+        let remainingMs = activeTargetMs;
+        let lastTimestamp = null;
+        let animationFrameId = null;
+        let audioCtx = null;
+
+        const timeDisplay = document.getElementById('time-display');
+        const roundIndicator = document.getElementById('round-indicator');
+        const completedDisplay = document.getElementById('completed-display');
+        const statusContainer = document.getElementById('status-container');
+        const statusText = document.getElementById('status-text');
+        const progressCircle = document.getElementById('progress-circle');
+        const roundPipsContainer = document.getElementById('round-pips-container');
+        const dynamicFavicon = document.getElementById('dynamic-favicon');
+
+        const roundsSlider = document.getElementById('rounds-slider');
+        const roundsVal = document.getElementById('rounds-val');
+        const roundsFill = document.getElementById('rounds-fill');
+
+        const durationSlider = document.getElementById('duration-slider');
+        const durationVal = document.getElementById('duration-val');
+        const durationFill = document.getElementById('duration-fill');
+
+        const restSlider = document.getElementById('rest-slider');
+        const restVal = document.getElementById('rest-val');
+        const restFill = document.getElementById('rest-fill');
+
+        const toggleStopRound = document.getElementById('toggle-stop-round');
+        const toggleStopRest = document.getElementById('toggle-stop-rest');
+
+        const primaryBtn = document.getElementById('primary-action-btn');
+        const resetBtn = document.getElementById('reset-action-btn');
+        const soundToggleBtn = document.getElementById('sound-toggle-btn');
+        const soundIconOn = document.getElementById('sound-icon-on');
+        const soundIconOff = document.getElementById('sound-icon-off');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const themeIconSun = document.getElementById('theme-icon-sun');
+        const themeIconMoon = document.getElementById('theme-icon-moon');
+        const fullscreenBtn = document.getElementById('fullscreen-toggle-btn');
+        const fullscreenExpand = document.getElementById('fullscreen-icon-expand');
+        const fullscreenCollapse = document.getElementById('fullscreen-icon-collapse');
+
+        // Circumference: 2 * PI * 135 ≈ 848.23001
+        const CIRCUMFERENCE = 2 * Math.PI * 135;
+        progressCircle.style.strokeDasharray = `${CIRCUMFERENCE}`;
+
+        function saveConfig() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                totalRounds,
+                roundDurationSec,
+                restDurationSec,
+                stopAfterRound,
+                stopAfterRest,
+                soundEnabled,
+                isLight
+            }));
+        }
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playBeep(freq = 880, duration = 0.08, type = 'sine') {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function playPhaseTransitionChime(isRest) {
+            if (!soundEnabled) return;
+            if (isRest) {
+                playBeep(659.25, 0.12);
+                setTimeout(() => playBeep(523.25, 0.18), 120);
+            } else {
+                playBeep(523.25, 0.12);
+                setTimeout(() => playBeep(659.25, 0.12), 120);
+                setTimeout(() => playBeep(783.99, 0.22), 240);
+            }
+        }
+
+        function playVictoryFanfare() {
+            if (!soundEnabled) return;
+            playBeep(523.25, 0.12);
+            setTimeout(() => playBeep(659.25, 0.12), 110);
+            setTimeout(() => playBeep(783.99, 0.12), 220);
+            setTimeout(() => playBeep(1046.50, 0.42), 330);
+        }
+
+        function formatTime(ms) {
+            if (ms < 0) ms = 0;
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const centiseconds = Math.floor((ms % 1000) / 10);
+
+            const mStr = String(minutes).padStart(2, '0');
+            const sStr = String(seconds).padStart(2, '0');
+            const cStr = String(centiseconds).padStart(2, '0');
+
+            return `${mStr}:${sStr}.${cStr}`;
+        }
+
+        function updateSliderTrack(slider, fillTrack) {
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const val = parseFloat(slider.value) || 0;
+            const percentage = ((val - min) / (max - min)) * 100;
+            fillTrack.style.width = `${percentage}%`;
+        }
+
+        function renderPips() {
+            roundPipsContainer.innerHTML = '';
+            for (let i = 1; i <= totalRounds; i++) {
+                const pip = document.createElement('div');
+                pip.className = 'pip';
+                if (i < currentRound || (isFinished && completedRounds === totalRounds)) {
+                    pip.classList.add('completed');
+                } else if (i === currentRound && !isFinished) {
+                    pip.classList.add('active');
+                }
+                roundPipsContainer.appendChild(pip);
+            }
+        }
+
+        function updateFavicon(colorHex) {
+            const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='${encodeURIComponent(colorHex)}'/></svg>`;
+            dynamicFavicon.href = `data:image/svg+xml,${svg}`;
+        }
+
+        window.addTime = function(seconds) {
+            remainingMs += seconds * 1000;
+            activeTargetMs += seconds * 1000;
+            if (phase === 'work') {
+                roundDurationSec = Math.round(activeTargetMs / 1000);
+                durationSlider.value = Math.min(180, Math.max(5, roundDurationSec));
+            }
+            playBeep(987.77, 0.06);
+            updateUI();
+        };
+
+        function updateUI() {
+            document.body.setAttribute('data-phase', phase);
+
+            timeDisplay.textContent = formatTime(remainingMs);
+            if (phase === 'rest') {
+                roundIndicator.textContent = `Rest • Round ${currentRound} of ${totalRounds}`;
+            } else {
+                roundIndicator.textContent = `Round ${currentRound} of ${totalRounds}`;
+            }
+            completedDisplay.textContent = `${completedRounds} / ${totalRounds} Done`;
+
+            if (isRunning) {
+                const shortSeconds = Math.ceil(remainingMs / 1000);
+                const mm = String(Math.floor(shortSeconds / 60)).padStart(2, '0');
+                const ss = String(shortSeconds % 60).padStart(2, '0');
+                if (phase === 'rest') {
+                    document.title = `(${mm}:${ss}) Rest • Round ${currentRound}/${totalRounds}`;
+                    updateFavicon('#fbbc04');
+                } else {
+                    document.title = `(${mm}:${ss}) Round ${currentRound}/${totalRounds}`;
+                    updateFavicon('#3b82f6');
+                }
+            } else if (isFinished) {
+                document.title = '🎉 Finished! • Google Timer';
+                updateFavicon('#34a853');
+            } else {
+                document.title = 'Google Material Timer & Counter';
+                updateFavicon('#3b82f6');
+            }
+
+            const fraction = activeTargetMs > 0 ? (remainingMs / activeTargetMs) : 0;
+            const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, fraction)));
+            progressCircle.style.strokeDashoffset = `${offset}`;
+
+            statusContainer.className = 'metric-value';
+            if (isFinished) {
+                statusContainer.classList.add('status-finished');
+                statusText.textContent = 'Finished';
+                primaryBtn.textContent = 'Start';
+            } else if (isRunning) {
+                statusContainer.classList.add('status-running');
+                statusText.textContent = phase === 'rest' ? 'Resting' : 'Running';
+                primaryBtn.textContent = 'Pause';
+            } else {
+                statusContainer.classList.add('status-paused');
+                const isFresh = remainingMs === activeTargetMs && currentRound === 1 && completedRounds === 0;
+                
+                if (isFresh) {
+                    statusText.textContent = 'Ready';
+                    primaryBtn.textContent = 'Start';
+                } else if (phase === 'rest' && remainingMs === activeTargetMs) {
+                    statusText.textContent = 'Paused (Rest Next)';
+                    primaryBtn.textContent = 'Start Rest';
+                } else if (phase === 'work' && remainingMs === activeTargetMs && currentRound > 1) {
+                    statusText.textContent = `Paused (Ready for R${currentRound})`;
+                    primaryBtn.textContent = `Start Round ${currentRound}`;
+                } else {
+                    statusText.textContent = 'Paused';
+                    primaryBtn.textContent = 'Resume';
+                }
+            }
+
+            roundsVal.textContent = `${totalRounds}x`;
+            durationVal.textContent = `${roundDurationSec}s`;
+            restVal.textContent = restDurationSec === 0 ? 'Off' : `${restDurationSec}s`;
+            updateSliderTrack(roundsSlider, roundsFill);
+            updateSliderTrack(durationSlider, durationFill);
+            updateSliderTrack(restSlider, restFill);
+
+            renderPips();
+
+            roundsSlider.disabled = isRunning;
+            durationSlider.disabled = isRunning;
+            restSlider.disabled = isRunning;
+        }
+
+        let lastPlayedSecond = null;
+        function timerLoop(currentTimestamp) {
+            if (!isRunning) return;
+
+            if (lastTimestamp === null) {
+                lastTimestamp = currentTimestamp;
+            }
+
+            const elapsed = currentTimestamp - lastTimestamp;
+            lastTimestamp = currentTimestamp;
+
+            remainingMs -= elapsed;
+
+            const secondsLeft = Math.ceil(remainingMs / 1000);
+            if (secondsLeft <= 3 && secondsLeft > 0 && secondsLeft !== lastPlayedSecond) {
+                lastPlayedSecond = secondsLeft;
+                playBeep(phase === 'rest' ? 600 : 440, 0.05);
+            }
+
+            if (remainingMs <= 0) {
+                remainingMs = 0;
+                lastPlayedSecond = null;
+                handlePhaseTransition();
+                return;
+            }
+
+            updateUI();
+            animationFrameId = requestAnimationFrame(timerLoop);
+        }
+
+        function handlePhaseTransition() {
+            if (phase === 'work') {
+                completedRounds++;
+
+                if (completedRounds >= totalRounds) {
+                    isRunning = false;
+                    isFinished = true;
+                    phase = 'finished';
+                    playVictoryFanfare();
+                    updateUI();
+                    return;
+                }
+
+                if (restDurationSec > 0) {
+                    phase = 'rest';
+                    activeTargetMs = restDurationSec * 1000;
+                    remainingMs = activeTargetMs;
+                    playPhaseTransitionChime(true);
+
+                    if (stopAfterRound) {
+                        pauseTimer();
+                        updateUI();
+                    } else {
+                        lastTimestamp = null;
+                        updateUI();
+                        animationFrameId = requestAnimationFrame(timerLoop);
+                    }
+                } else {
+                    currentRound++;
+                    phase = 'work';
+                    activeTargetMs = roundDurationSec * 1000;
+                    remainingMs = activeTargetMs;
+                    playPhaseTransitionChime(false);
+
+                    if (stopAfterRound) {
+                        pauseTimer();
+                        updateUI();
+                    } else {
+                        lastTimestamp = null;
+                        updateUI();
+                        animationFrameId = requestAnimationFrame(timerLoop);
+                    }
+                }
+            } else if (phase === 'rest') {
+                currentRound++;
+                phase = 'work';
+                activeTargetMs = roundDurationSec * 1000;
+                remainingMs = activeTargetMs;
+                playPhaseTransitionChime(false);
+
+                if (stopAfterRest) {
+                    pauseTimer();
+                    updateUI();
+                } else {
+                    lastTimestamp = null;
+                    updateUI();
+                    animationFrameId = requestAnimationFrame(timerLoop);
+                }
+            }
+        }
+
+        function toggleTimer() {
+            getAudioContext();
+
+            if (isFinished) {
+                resetTimer();
+                startTimer();
+                return;
+            }
+
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            isFinished = false;
+            lastTimestamp = null;
+            lastPlayedSecond = null;
+            updateUI();
+            animationFrameId = requestAnimationFrame(timerLoop);
+        }
+
+        function pauseTimer() {
+            if (!isRunning) return;
+            isRunning = false;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            lastTimestamp = null;
+            updateUI();
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            isFinished = false;
+            currentRound = 1;
+            completedRounds = 0;
+            phase = 'work';
+            activeTargetMs = roundDurationSec * 1000;
+            remainingMs = activeTargetMs;
+            lastTimestamp = null;
+            lastPlayedSecond = null;
+            updateUI();
+        }
+
+        function createRipple(e) {
+            const button = e.currentTarget;
+            const circle = document.createElement('span');
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+
+            const rect = button.getBoundingClientRect();
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${e.clientX - rect.left - radius}px`;
+            circle.style.top = `${e.clientY - rect.top - radius}px`;
+            circle.classList.add('ripple');
+
+            const existingRipple = button.querySelector('.ripple');
+            if (existingRipple) existingRipple.remove();
+
+            button.appendChild(circle);
+        }
+
+        primaryBtn.addEventListener('click', (e) => {
+            createRipple(e);
+            toggleTimer();
+        });
+
+        resetBtn.addEventListener('click', (e) => {
+            createRipple(e);
+            resetTimer();
+        });
+
+        roundsSlider.addEventListener('input', (e) => {
+            totalRounds = parseInt(e.target.value, 10);
+            if (completedRounds >= totalRounds) {
+                completedRounds = totalRounds - 1;
+            }
+            saveConfig();
+            updateUI();
+        });
+
+        durationSlider.addEventListener('input', (e) => {
+            roundDurationSec = parseInt(e.target.value, 10);
+            if (phase === 'work' && !isRunning) {
+                activeTargetMs = roundDurationSec * 1000;
+                remainingMs = activeTargetMs;
+            }
+            saveConfig();
+            updateUI();
+        });
+
+        restSlider.addEventListener('input', (e) => {
+            restDurationSec = parseInt(e.target.value, 10);
+            if (phase === 'rest' && !isRunning) {
+                activeTargetMs = restDurationSec * 1000;
+                remainingMs = activeTargetMs;
+            }
+            saveConfig();
+            updateUI();
+        });
+
+        toggleStopRound.addEventListener('change', (e) => {
+            stopAfterRound = e.target.checked;
+            saveConfig();
+        });
+
+        toggleStopRest.addEventListener('change', (e) => {
+            stopAfterRest = e.target.checked;
+            saveConfig();
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const isFull = !!document.fullscreenElement;
+            document.body.classList.toggle('is-fullscreen', isFull);
+            fullscreenExpand.style.display = isFull ? 'none' : 'block';
+            fullscreenCollapse.style.display = isFull ? 'block' : 'none';
+        });
+
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIconOn.style.display = soundEnabled ? 'block' : 'none';
+            soundIconOff.style.display = soundEnabled ? 'none' : 'block';
+            saveConfig();
+            if (soundEnabled) playBeep(880, 0.08);
+        });
+
+        function applyTheme(light) {
+            isLight = light;
+            document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+            themeIconSun.style.display = isLight ? 'block' : 'none';
+            themeIconMoon.style.display = isLight ? 'none' : 'block';
+            saveConfig();
+        }
+
+        themeToggleBtn.addEventListener('click', () => applyTheme(!isLight));
+
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleTimer();
+            } else if (e.key === 'r' || e.key === 'R') {
+                resetTimer();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullscreen();
+            } else if (e.key === 'm' || e.key === 'M') {
+                soundToggleBtn.click();
+            }
+        });
+
+        roundsSlider.value = totalRounds;
+        durationSlider.value = roundDurationSec;
+        restSlider.value = restDurationSec;
+        toggleStopRound.checked = stopAfterRound;
+        toggleStopRest.checked = stopAfterRest;
+        soundIconOn.style.display = soundEnabled ? 'block' : 'none';
+        soundIconOff.style.display = soundEnabled ? 'none' : 'block';
+        applyTheme(isLight);
+        updateUI();
+    </script>
+</body>
+
+</html>
