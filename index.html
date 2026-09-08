@@ -613,6 +613,10 @@
             min-width: 120px;
         }
 
+        .btn-pill span {
+            pointer-events: none;
+        }
+
         .btn-primary {
             background-color: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
@@ -857,8 +861,8 @@
 
         <!-- Material 3 Pill Action Buttons -->
         <div class="actions-row">
-            <button id="primary-action-btn" class="btn-pill btn-primary">Start</button>
-            <button id="reset-action-btn" class="btn-pill btn-secondary">Reset</button>
+            <button id="primary-action-btn" class="btn-pill btn-primary"><span id="primary-btn-label">Start</span></button>
+            <button id="reset-action-btn" class="btn-pill btn-secondary"><span id="reset-btn-label">Reset</span></button>
         </div>
 
     </main>
@@ -943,7 +947,9 @@
         const toggleStopRest = document.getElementById('toggle-stop-rest');
 
         const primaryBtn = document.getElementById('primary-action-btn');
+        const primaryBtnLabel = document.getElementById('primary-btn-label');
         const resetBtn = document.getElementById('reset-action-btn');
+        const resetBtnLabel = document.getElementById('reset-btn-label');
         const soundToggleBtn = document.getElementById('sound-toggle-btn');
         const soundIconOn = document.getElementById('sound-icon-on');
         const soundIconOff = document.getElementById('sound-icon-off');
@@ -1071,6 +1077,34 @@
             dynamicFavicon.href = `data:image/svg+xml,${svg}`;
         }
 
+        let lastRenderedSec = null;
+
+        // Ultra-lightweight per-frame render (NEVER touches button DOM or triggers reflows)
+        function renderTimeTick(ms) {
+            timeDisplay.textContent = formatTime(ms);
+
+            const fraction = activeTargetMs > 0 ? (ms / activeTargetMs) : 0;
+            const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, fraction)));
+            progressCircle.style.strokeDashoffset = `${offset}`;
+
+            // Sync tab title & favicon once per second
+            const sec = Math.ceil(ms / 1000);
+            if (sec !== lastRenderedSec) {
+                lastRenderedSec = sec;
+                const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+                const ss = String(sec % 60).padStart(2, '0');
+                if (isRunning) {
+                    if (phase === 'rest') {
+                        document.title = `(${mm}:${ss}) Rest • Round ${currentRound}/${totalRounds}`;
+                        updateFavicon('#fbbc04');
+                    } else {
+                        document.title = `(${mm}:${ss}) Round ${currentRound}/${totalRounds}`;
+                        updateFavicon('#3b82f6');
+                    }
+                }
+            }
+        }
+
         window.addTime = function(seconds) {
             remainingMs += seconds * 1000;
             activeTargetMs += seconds * 1000;
@@ -1079,13 +1113,14 @@
                 durationSlider.value = Math.min(180, Math.max(5, roundDurationSec));
             }
             playBeep(987.77, 0.06);
-            updateUI();
+            renderTimeTick(remainingMs);
+            updateStaticUI();
         };
 
-        function updateUI() {
+        // State change UI update (only executes when state actually changes, preserving DOM stability)
+        function updateStaticUI() {
             document.body.setAttribute('data-phase', phase);
 
-            timeDisplay.textContent = formatTime(remainingMs);
             if (phase === 'rest') {
                 roundIndicator.textContent = `Rest • Round ${currentRound} of ${totalRounds}`;
             } else {
@@ -1093,55 +1128,43 @@
             }
             completedDisplay.textContent = `${completedRounds} / ${totalRounds} Done`;
 
-            if (isRunning) {
-                const shortSeconds = Math.ceil(remainingMs / 1000);
-                const mm = String(Math.floor(shortSeconds / 60)).padStart(2, '0');
-                const ss = String(shortSeconds % 60).padStart(2, '0');
-                if (phase === 'rest') {
-                    document.title = `(${mm}:${ss}) Rest • Round ${currentRound}/${totalRounds}`;
-                    updateFavicon('#fbbc04');
-                } else {
-                    document.title = `(${mm}:${ss}) Round ${currentRound}/${totalRounds}`;
-                    updateFavicon('#3b82f6');
-                }
-            } else if (isFinished) {
-                document.title = '🎉 Finished! • Interval Timer';
-                updateFavicon('#34a853');
-            } else {
-                document.title = 'Interval Timer • Counter & Rest';
-                updateFavicon('#3b82f6');
-            }
-
-            const fraction = activeTargetMs > 0 ? (remainingMs / activeTargetMs) : 0;
-            const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, fraction)));
-            progressCircle.style.strokeDashoffset = `${offset}`;
-
             statusContainer.className = 'metric-value';
+            let label = 'Start';
+
             if (isFinished) {
                 statusContainer.classList.add('status-finished');
                 statusText.textContent = 'Finished';
-                primaryBtn.textContent = 'Start';
+                label = 'Start';
+                document.title = '🎉 Finished! • Interval Timer';
+                updateFavicon('#34a853');
             } else if (isRunning) {
                 statusContainer.classList.add('status-running');
                 statusText.textContent = phase === 'rest' ? 'Resting' : 'Running';
-                primaryBtn.textContent = 'Pause';
+                label = 'Pause';
             } else {
                 statusContainer.classList.add('status-paused');
                 const isFresh = remainingMs === activeTargetMs && currentRound === 1 && completedRounds === 0;
                 
                 if (isFresh) {
                     statusText.textContent = 'Ready';
-                    primaryBtn.textContent = 'Start';
+                    label = 'Start';
+                    document.title = 'Interval Timer • Counter & Rest';
+                    updateFavicon('#3b82f6');
                 } else if (phase === 'rest' && remainingMs === activeTargetMs) {
                     statusText.textContent = 'Paused (Rest Next)';
-                    primaryBtn.textContent = 'Start Rest';
+                    label = 'Start Rest';
                 } else if (phase === 'work' && remainingMs === activeTargetMs && currentRound > 1) {
                     statusText.textContent = `Paused (Ready for R${currentRound})`;
-                    primaryBtn.textContent = `Start Round ${currentRound}`;
+                    label = `Start Round ${currentRound}`;
                 } else {
                     statusText.textContent = 'Paused';
-                    primaryBtn.textContent = 'Resume';
+                    label = 'Resume';
                 }
+            }
+
+            // Only mutate button label if text actually changed to preserve click event targets
+            if (primaryBtnLabel.textContent !== label) {
+                primaryBtnLabel.textContent = label;
             }
 
             roundsVal.textContent = `${totalRounds}x`;
@@ -1156,6 +1179,11 @@
             roundsSlider.disabled = isRunning;
             durationSlider.disabled = isRunning;
             restSlider.disabled = isRunning;
+        }
+
+        function updateUI() {
+            renderTimeTick(remainingMs);
+            updateStaticUI();
         }
 
         // Inline Web Worker Heartbeat to bypass browser background tab throttling
@@ -1218,7 +1246,7 @@
                 return;
             }
 
-            updateUI();
+            renderTimeTick(remainingMs);
         }
 
         // Foreground 60fps render loop (single source of scheduling)
@@ -1286,15 +1314,12 @@
             }
         }
 
-        let lastToggleTime = 0;
+        let isToggling = false;
 
         function toggleTimer() {
-            const now = performance.now();
-            // Debounce rapid / synthetic duplicate clicks (within 160ms)
-            if (now - lastToggleTime < 160) {
-                return;
-            }
-            lastToggleTime = now;
+            if (isToggling) return;
+            isToggling = true;
+            setTimeout(() => { isToggling = false; }, 60);
 
             getAudioContext();
 
@@ -1374,12 +1399,14 @@
         }
 
         primaryBtn.addEventListener('click', (e) => {
-            e.currentTarget.blur(); // Blur button to prevent Spacebar double-activation
+            e.preventDefault();
+            e.currentTarget.blur();
             createRipple(e);
             toggleTimer();
         });
 
         resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             e.currentTarget.blur();
             createRipple(e);
             resetTimer();
