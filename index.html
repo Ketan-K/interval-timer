@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Material Timer & Counter</title>
+    <title>Interval Timer • Counter & Rest</title>
     <!-- PWA Manifest & App Icons -->
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#20242e">
@@ -20,7 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Google Material Design 3 Dark Tokens */
+            /* Dark Theme Tokens */
             --md-sys-color-background: #111318;
             --md-sys-color-surface: #1a1d24;
             --md-sys-color-surface-container: #20242e;
@@ -41,7 +41,7 @@
             --md-sys-color-accent-amber: #fbbc04;
             --md-sys-color-accent-amber-glow: rgba(251, 188, 4, 0.4);
             --md-sys-color-accent-red: #ea4335;
-            --font-family-google: 'Google Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-family-sans: 'Google Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             --font-family-mono: 'Roboto Mono', 'Google Sans', monospace;
 
             /* Hero Ring Accent */
@@ -87,7 +87,7 @@
         }
 
         body {
-            font-family: var(--font-family-google);
+            font-family: var(--font-family-sans);
             background-color: var(--md-sys-color-background);
             color: var(--md-sys-color-on-surface);
             min-height: 100vh;
@@ -203,7 +203,7 @@
             filter: drop-shadow(0 0 12px var(--ring-accent-glow));
         }
 
-        /* 4 Cardinal Google Clock Guide Dots */
+        /* 4 Cardinal Dial Markers */
         .cardinal-dot {
             position: absolute;
             width: 7px;
@@ -231,7 +231,7 @@
 
         /* Hero Digits */
         .time-display {
-            font-family: var(--font-family-google);
+            font-family: var(--font-family-sans);
             font-size: 56px;
             font-weight: 700;
             letter-spacing: -0.03em;
@@ -290,7 +290,7 @@
             opacity: 0.85;
         }
 
-        /* Quick Preset Chips (+15s, +30s, +1m) */
+        /* Preset Quick Adds (+15s, +30s, +1m) */
         .preset-chips-row {
             display: flex;
             align-items: center;
@@ -303,7 +303,7 @@
             background: var(--md-sys-color-surface-container-high);
             border: 1px solid var(--md-sys-color-outline-variant);
             color: var(--md-sys-color-on-surface-variant);
-            font-family: var(--font-family-google);
+            font-family: var(--font-family-sans);
             font-size: 12px;
             font-weight: 600;
             padding: 4px 12px;
@@ -594,7 +594,7 @@
         }
 
         .btn-pill {
-            font-family: var(--font-family-google);
+            font-family: var(--font-family-sans);
             border: none;
             outline: none;
             border-radius: 9999px;
@@ -742,7 +742,7 @@
         </button>
     </header>
 
-    <!-- Main Google Material Card -->
+    <!-- Main Timer Card -->
     <main class="timer-card">
         
         <!-- HERO CIRCULAR DIAL (Large & Prominent) -->
@@ -770,7 +770,7 @@
         <!-- Round Stepper Progress Pips -->
         <div class="round-pips-bar" id="round-pips-container"></div>
 
-        <!-- Quick Preset Chips (+15s, +30s, +1m) -->
+        <!-- Preset Quick Adds (+15s, +30s, +1m) -->
         <div class="preset-chips-row">
             <button class="preset-chip" onclick="addTime(15)">+15s</button>
             <button class="preset-chip" onclick="addTime(30)">+30s</button>
@@ -874,9 +874,9 @@
 
     <!-- Precision Timer Engine -->
     <script>
-        const STORAGE_KEY = 'google_interval_timer_cfg';
+        const STORAGE_KEY = 'interval_timer_cfg';
 
-        const savedCfg = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        const savedCfg = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem('google_interval_timer_cfg') || '{}');
         let totalRounds = savedCfg.totalRounds || 4;
         let roundDurationSec = savedCfg.roundDurationSec || 30;
         let restDurationSec = (savedCfg.restDurationSec !== undefined) ? savedCfg.restDurationSec : 10;
@@ -1073,10 +1073,10 @@
                     updateFavicon('#3b82f6');
                 }
             } else if (isFinished) {
-                document.title = '🎉 Finished! • Google Timer';
+                document.title = '🎉 Finished! • Interval Timer';
                 updateFavicon('#34a853');
             } else {
-                document.title = 'Google Material Timer & Counter';
+                document.title = 'Interval Timer • Counter & Rest';
                 updateFavicon('#3b82f6');
             }
 

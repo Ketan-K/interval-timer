@@ -1,7 +1,7 @@
 {
-  "name": "Interval Timer - Google Material 3",
+  "name": "Interval Timer",
   "short_name": "Timer",
-  "description": "A sleek, distraction-free interval timer and counter crafted in Google Material Design 3 style.",
+  "description": "A sleek, distraction-free interval timer and counter with customizable round and rest intervals.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
