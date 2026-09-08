@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Interval Timer • Counter & Rest</title>
     <!-- PWA Manifest & App Icons -->
     <link rel="manifest" href="manifest.webmanifest">
@@ -172,13 +172,6 @@
             margin: 6px 0 20px 0;
         }
 
-        @media (max-width: 420px) {
-            .dial-container {
-                width: 270px;
-                height: 270px;
-            }
-        }
-
         .dial-svg {
             width: 100%;
             height: 100%;
@@ -238,12 +231,6 @@
             color: var(--md-sys-color-on-surface);
             font-variant-numeric: tabular-nums;
             line-height: 1.05;
-        }
-
-        @media (max-width: 420px) {
-            .time-display {
-                font-size: 46px;
-            }
         }
 
         .round-subtext {
@@ -406,13 +393,6 @@
             grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
             margin-bottom: 12px;
-        }
-
-        @media (max-width: 520px) {
-            .sliders-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
         }
 
         .slider-group {
@@ -685,6 +665,300 @@
             padding: 2px 6px;
             font-size: 10px;
             font-family: var(--font-family-mono);
+        }
+
+        /* ========================================================= */
+        /* MOBILE VIEW OPTIMIZATIONS (Full Vertical Use & No Scroll) */
+        /* ========================================================= */
+        @media (max-width: 600px) {
+            html, body {
+                height: 100dvh;
+                max-height: 100dvh;
+                overflow: hidden;
+                overscroll-behavior: none;
+            }
+
+            body {
+                padding: 10px 14px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .utility-header {
+                top: 14px;
+                gap: 10px;
+            }
+
+            .icon-btn {
+                width: 36px;
+                height: 36px;
+            }
+
+            .icon-btn svg {
+                width: 17px;
+                height: 17px;
+            }
+
+            .timer-card {
+                padding: 44px 18px 18px 18px;
+                border-radius: 30px;
+                width: 100%;
+                max-width: 440px;
+                max-height: calc(100dvh - 20px);
+                box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            /* Majestic Hero Dial - Full Vertical Presence */
+            .dial-container {
+                width: min(270px, 32vh, 76vw);
+                height: min(270px, 32vh, 76vw);
+                margin: 4px 0 12px 0;
+            }
+
+            .time-display {
+                font-size: clamp(38px, 9.5vw, 48px);
+            }
+
+            .round-subtext {
+                font-size: 14px;
+                margin-top: 6px;
+            }
+
+            .cardinal-dot {
+                width: 6px;
+                height: 6px;
+            }
+
+            .dot-top { top: -12px; }
+            .dot-right { right: -12px; }
+            .dot-bottom { bottom: -12px; }
+            .dot-left { left: -12px; }
+
+            .round-pips-bar {
+                gap: 5px;
+                margin-bottom: 8px;
+            }
+
+            .pip {
+                width: 18px;
+                height: 4px;
+            }
+
+            .preset-chips-row {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .preset-chip {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+
+            .divider {
+                margin: 2px 0 10px 0;
+            }
+
+            .metrics-grid {
+                margin-bottom: 10px;
+            }
+
+            .metric-label {
+                font-size: 11.5px;
+            }
+
+            .metric-value {
+                font-size: 15px;
+            }
+
+            .status-badge-dot {
+                width: 8px;
+                height: 8px;
+            }
+
+            .settings-compact-container {
+                padding: 10px 14px;
+                margin-bottom: 14px;
+                border-radius: 18px;
+            }
+
+            .sliders-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 8px;
+            }
+
+            .slider-group {
+                gap: 4px;
+            }
+
+            .slider-header {
+                gap: 2px;
+            }
+
+            .slider-label {
+                font-size: 11px;
+                white-space: nowrap;
+            }
+
+            .slider-val-badge {
+                font-size: 12px;
+            }
+
+            .range-wrapper {
+                height: 16px;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                width: 14px;
+                height: 14px;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+            }
+
+            .toggles-row {
+                padding-top: 8px;
+                gap: 12px;
+            }
+
+            .toggle-label {
+                font-size: 11.5px;
+            }
+
+            .m3-switch {
+                width: 32px;
+                height: 18px;
+            }
+
+            .m3-slider:before {
+                height: 11px;
+                width: 11px;
+                left: 2px;
+                bottom: 2px;
+            }
+
+            .m3-switch input:checked + .m3-slider:before {
+                transform: translateX(14px);
+            }
+
+            .actions-row {
+                gap: 14px;
+            }
+
+            .btn-pill {
+                padding: 11px 32px;
+                font-size: 15px;
+                min-width: 115px;
+            }
+
+            .shortcuts-hint {
+                display: none;
+            }
+        }
+
+        /* Landscape or extra-short screen (< 580px height) */
+        @media (max-height: 580px) {
+            body {
+                padding: 4px 6px;
+            }
+
+            .utility-header {
+                top: 4px;
+            }
+
+            .timer-card {
+                padding: 30px 10px 8px 10px;
+                border-radius: 18px;
+            }
+
+            .dial-container {
+                width: min(140px, 20vh);
+                height: min(140px, 20vh);
+                margin: 0 0 4px 0;
+            }
+
+            .time-display {
+                font-size: 24px;
+            }
+
+            .round-subtext {
+                font-size: 11px;
+                margin-top: 2px;
+            }
+
+            .round-pips-bar {
+                margin-bottom: 3px;
+                gap: 3px;
+            }
+
+            .pip {
+                width: 12px;
+                height: 3px;
+            }
+
+            .preset-chips-row {
+                margin-bottom: 3px;
+                gap: 4px;
+            }
+
+            .preset-chip {
+                padding: 2px 8px;
+                font-size: 10px;
+            }
+
+            .divider {
+                margin: 2px 0 4px 0;
+            }
+
+            .metrics-grid {
+                margin-bottom: 4px;
+            }
+
+            .metric-label {
+                font-size: 10px;
+            }
+
+            .metric-value {
+                font-size: 12px;
+            }
+
+            .settings-compact-container {
+                padding: 5px 8px;
+                margin-bottom: 6px;
+                border-radius: 10px;
+            }
+
+            .sliders-grid {
+                margin-bottom: 4px;
+                gap: 6px;
+            }
+
+            .toggles-row {
+                padding-top: 4px;
+                gap: 6px;
+            }
+
+            .actions-row {
+                gap: 8px;
+            }
+
+            .btn-pill {
+                padding: 7px 18px;
+                font-size: 13px;
+                min-width: 90px;
+            }
+
+            .shortcuts-hint {
+                display: none;
+            }
         }
     </style>
 </head>
