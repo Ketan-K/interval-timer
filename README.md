@@ -1,11 +1,12 @@
 # Interval Timer ⏱️
 
 [![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-3b82f6?style=for-the-badge&logo=github)](https://ketan-k.github.io/interval-timer/)
+[![PWA Ready](https://img.shields.io/badge/PWA-Installable%20%26%20Offline-9333ea?style=for-the-badge&logo=pwa)](https://web.dev/progressive-web-apps/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Design: Material 3](https://img.shields.io/badge/Design-Material%203-blue.svg?style=for-the-badge&logo=google)](https://m3.material.io/)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-success.svg?style=for-the-badge)](https://developer.mozilla.org/)
 
-> A sleek, distraction-free interval timer and counter crafted in **Google Material Design 3 (Material You / Google Clock)** aesthetic. Features customizable round & rest intervals, audio chimes, full keyboard shortcuts, and zero external runtime dependencies.
+> A sleek, distraction-free interval timer and counter crafted in **Google Material Design 3 (Material You / Google Clock)** aesthetic. Features customizable round & rest intervals, audio chimes, offline PWA support, screen wake lock, and zero external runtime dependencies.
 
 🔗 **Live Application:** [https://ketan-k.github.io/interval-timer/](https://ketan-k.github.io/interval-timer/)
 
@@ -13,6 +14,10 @@
 
 ## ✨ Features
 
+- 📱 **Progressive Web App (PWA) & Offline-First:**
+  - **Installable:** Install as a standalone native-like app on macOS, Windows, Linux, Android, and iOS directly from the browser.
+  - **100% Offline Capability:** Powered by a lightweight Service Worker (`sw.js`) that caches application shell and fonts for instant loading anywhere.
+  - **Screen Wake Lock API:** Prevents your phone or laptop display from sleeping or dimming while an interval is actively running.
 - 🎨 **Google Material Design 3 Aesthetic:**
   - Authentic Google Dark mode container (`#20242e`) with radiant Google Blue (`#3b82f6`) accents.
   - Light / Dark theme toggle with persistent preferences.
@@ -54,6 +59,19 @@
 
 ---
 
+## 📲 Installing as a PWA
+
+### On Desktop (Chrome, Edge, Brave, Safari 17+)
+1. Visit [https://ketan-k.github.io/interval-timer/](https://ketan-k.github.io/interval-timer/)
+2. Click the **Install** icon in the browser address bar or the header install button.
+3. The timer opens in its own clean window without browser tabs or URLs, dockable like a native app.
+
+### On Mobile (iOS & Android)
+- **Android (Chrome):** Tap the install prompt or menu (⋮) → **"Install App"**.
+- **iOS (Safari):** Tap the Share icon (□↑) → **"Add to Home Screen"**.
+
+---
+
 ## 🚀 Running Locally
 
 Because this project is built with vanilla web technologies, there are **no dependencies to install** and **no build steps required**.
@@ -87,6 +105,7 @@ python3 -m http.server 8080
 
 ## 🛠️ Tech Stack
 
+- **PWA:** Web App Manifest (`manifest.webmanifest`), Service Worker (`sw.js`), Screen Wake Lock API
 - **Structure:** Semantic HTML5
 - **Styling:** Vanilla CSS3 with Material Design 3 Custom Properties
 - **Logic:** Vanilla JavaScript (ES6+)

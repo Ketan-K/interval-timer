@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Material Timer & Counter</title>
+    <!-- PWA Manifest & App Icons -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#20242e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Interval Timer">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <!-- Dynamic Favicon SVG -->
     <link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%233b82f6'/></svg>">
     <!-- Google Fonts: Google Sans & Roboto Mono -->
@@ -682,6 +689,14 @@
 
     <!-- Utility Header (Fullscreen, Theme & Audio Controls) -->
     <header class="utility-header">
+        <button id="install-pwa-btn" class="icon-btn" title="Install Web App" aria-label="Install App" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        </button>
+
         <button id="fullscreen-toggle-btn" class="icon-btn" title="Toggle Fullscreen (F)" aria-label="Toggle Fullscreen">
             <svg id="fullscreen-icon-expand" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 3 21 3 21 9"></polyline>
@@ -1221,6 +1236,7 @@
         function startTimer() {
             if (isRunning) return;
             isRunning = true;
+            requestWakeLock();
             isFinished = false;
             lastTimestamp = null;
             lastPlayedSecond = null;
@@ -1231,6 +1247,7 @@
         function pauseTimer() {
             if (!isRunning) return;
             isRunning = false;
+            releaseWakeLock();
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
@@ -1241,6 +1258,7 @@
 
         function resetTimer() {
             pauseTimer();
+            releaseWakeLock();
             isFinished = false;
             currentRound = 1;
             completedRounds = 0;
@@ -1377,6 +1395,59 @@
         soundIconOff.style.display = soundEnabled ? 'none' : 'block';
         applyTheme(isLight);
         updateUI();
+
+        // Screen Wake Lock API (prevents display sleep during workouts)
+        let wakeLock = null;
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator && !wakeLock) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { wakeLock = null; });
+                } catch (err) {}
+            }
+        }
+        function releaseWakeLock() {
+            if (wakeLock) {
+                wakeLock.release().catch(() => {});
+                wakeLock = null;
+            }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
+                requestWakeLock();
+            }
+        });
+
+        // PWA Installation Prompt Handling
+        let deferredInstallPrompt = null;
+        const installBtn = document.getElementById('install-pwa-btn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            if (installBtn) installBtn.style.display = 'flex';
+        });
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                const { outcome } = await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                installBtn.style.display = 'none';
+            });
+        }
+        window.addEventListener('appinstalled', () => {
+            if (installBtn) installBtn.style.display = 'none';
+            deferredInstallPrompt = null;
+        });
+
+        // Service Worker Registration for 100% Offline Capability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch((err) => {
+                    console.warn('ServiceWorker registration error:', err);
+                });
+            });
+        }
     </script>
 </body>
 
