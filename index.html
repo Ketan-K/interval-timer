@@ -876,14 +876,35 @@
     <script>
         const STORAGE_KEY = 'interval_timer_cfg';
 
-        const savedCfg = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem('google_interval_timer_cfg') || '{}');
-        let totalRounds = savedCfg.totalRounds || 4;
-        let roundDurationSec = savedCfg.roundDurationSec || 30;
-        let restDurationSec = (savedCfg.restDurationSec !== undefined) ? savedCfg.restDurationSec : 10;
-        let stopAfterRound = savedCfg.stopAfterRound || false;
-        let stopAfterRest = savedCfg.stopAfterRest || false;
-        let soundEnabled = (savedCfg.soundEnabled !== undefined) ? savedCfg.soundEnabled : true;
-        let isLight = (savedCfg.isLight !== undefined) ? savedCfg.isLight : false;
+        // Defensive LocalStorage Loader with Schema Fallbacks
+        function safeLoad(key, fallbackValue) {
+            try {
+                const item = localStorage.getItem(key);
+                if (!item) return fallbackValue;
+                const parsed = JSON.parse(item);
+                return (typeof parsed === 'object' && parsed !== null) ? parsed : fallbackValue;
+            } catch (error) {
+                console.warn(`LocalStorage key "${key}" was invalid or corrupted. Using defaults.`);
+                return fallbackValue;
+            }
+        }
+
+        function sanitizeInt(val, min, max, defaultVal) {
+            const num = parseInt(val, 10);
+            return (!isNaN(num) && num >= min && num <= max) ? num : defaultVal;
+        }
+        function sanitizeBool(val, defaultVal) {
+            return typeof val === 'boolean' ? val : defaultVal;
+        }
+
+        const rawCfg = safeLoad(STORAGE_KEY, safeLoad('google_interval_timer_cfg', {}));
+        let totalRounds = sanitizeInt(rawCfg.totalRounds, 1, 50, 4);
+        let roundDurationSec = sanitizeInt(rawCfg.roundDurationSec, 5, 3600, 30);
+        let restDurationSec = sanitizeInt(rawCfg.restDurationSec, 0, 600, 10);
+        let stopAfterRound = sanitizeBool(rawCfg.stopAfterRound, false);
+        let stopAfterRest = sanitizeBool(rawCfg.stopAfterRest, false);
+        let soundEnabled = sanitizeBool(rawCfg.soundEnabled, true);
+        let isLight = sanitizeBool(rawCfg.isLight, false);
 
         let currentRound = 1;
         let completedRounds = 0;
@@ -955,10 +976,21 @@
                 if (AudioContextClass) audioCtx = new AudioContextClass();
             }
             if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
+                audioCtx.resume().catch(() => {});
             }
             return audioCtx;
         }
+
+        // Proactively unlock AudioContext on first user interaction anywhere
+        function unlockAudioPipeline() {
+            const ctx = getAudioContext();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume().catch(() => {});
+            }
+        }
+        ['click', 'keydown', 'touchstart', 'pointerdown'].forEach((evt) => {
+            window.addEventListener(evt, unlockAudioPipeline, { passive: true });
+        });
 
         function playBeep(freq = 880, duration = 0.08, type = 'sine') {
             if (!soundEnabled) return;
@@ -1126,12 +1158,46 @@
             restSlider.disabled = isRunning;
         }
 
+        // Inline Web Worker Heartbeat to bypass browser background tab throttling
+        let heartbeatWorker = null;
+        try {
+            const workerCode = `
+                let timer = null;
+                self.onmessage = function(e) {
+                    if (e.data === 'start') {
+                        if (!timer) {
+                            timer = setInterval(() => self.postMessage('tick'), 25);
+                        }
+                    } else if (e.data === 'stop') {
+                        if (timer) {
+                            clearInterval(timer);
+                            timer = null;
+                        }
+                    }
+                };
+            `;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            heartbeatWorker = new Worker(URL.createObjectURL(blob));
+            heartbeatWorker.onmessage = () => {
+                // When tab is hidden/backgrounded, requestAnimationFrame is paused by browser.
+                // The Web Worker continuous heartbeat drives the timer smoothly!
+                if (isRunning && document.hidden) {
+                    stepTimer(performance.now());
+                }
+            };
+        } catch (err) {
+            console.warn('Web Worker heartbeat unavailable:', err);
+        }
+
         let lastPlayedSecond = null;
-        function timerLoop(currentTimestamp) {
+
+        // Core tick step logic
+        function stepTimer(currentTimestamp) {
             if (!isRunning) return;
 
             if (lastTimestamp === null) {
                 lastTimestamp = currentTimestamp;
+                return;
             }
 
             const elapsed = currentTimestamp - lastTimestamp;
@@ -1153,6 +1219,12 @@
             }
 
             updateUI();
+        }
+
+        // Foreground 60fps render loop
+        function timerLoop(currentTimestamp) {
+            if (!isRunning) return;
+            stepTimer(currentTimestamp);
             animationFrameId = requestAnimationFrame(timerLoop);
         }
 
@@ -1237,6 +1309,7 @@
             if (isRunning) return;
             isRunning = true;
             requestWakeLock();
+            if (heartbeatWorker) heartbeatWorker.postMessage('start');
             isFinished = false;
             lastTimestamp = null;
             lastPlayedSecond = null;
@@ -1248,6 +1321,7 @@
             if (!isRunning) return;
             isRunning = false;
             releaseWakeLock();
+            if (heartbeatWorker) heartbeatWorker.postMessage('stop');
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
@@ -1259,6 +1333,7 @@
         function resetTimer() {
             pauseTimer();
             releaseWakeLock();
+            if (heartbeatWorker) heartbeatWorker.postMessage('stop');
             isFinished = false;
             currentRound = 1;
             completedRounds = 0;
