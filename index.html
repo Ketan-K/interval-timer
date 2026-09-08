@@ -1221,10 +1221,11 @@
             updateUI();
         }
 
-        // Foreground 60fps render loop
+        // Foreground 60fps render loop (single source of scheduling)
         function timerLoop(currentTimestamp) {
             if (!isRunning) return;
             stepTimer(currentTimestamp);
+            if (!isRunning) return; // Guard: if stepTimer triggered a pause, do not schedule
             animationFrameId = requestAnimationFrame(timerLoop);
         }
 
@@ -1236,6 +1237,8 @@
                     isRunning = false;
                     isFinished = true;
                     phase = 'finished';
+                    releaseWakeLock();
+                    if (heartbeatWorker) heartbeatWorker.postMessage('stop');
                     playVictoryFanfare();
                     updateUI();
                     return;
@@ -1245,30 +1248,26 @@
                     phase = 'rest';
                     activeTargetMs = restDurationSec * 1000;
                     remainingMs = activeTargetMs;
+                    lastTimestamp = null;
                     playPhaseTransitionChime(true);
 
                     if (stopAfterRound) {
                         pauseTimer();
-                        updateUI();
                     } else {
-                        lastTimestamp = null;
                         updateUI();
-                        animationFrameId = requestAnimationFrame(timerLoop);
                     }
                 } else {
                     currentRound++;
                     phase = 'work';
                     activeTargetMs = roundDurationSec * 1000;
                     remainingMs = activeTargetMs;
+                    lastTimestamp = null;
                     playPhaseTransitionChime(false);
 
                     if (stopAfterRound) {
                         pauseTimer();
-                        updateUI();
                     } else {
-                        lastTimestamp = null;
                         updateUI();
-                        animationFrameId = requestAnimationFrame(timerLoop);
                     }
                 }
             } else if (phase === 'rest') {
@@ -1276,20 +1275,27 @@
                 phase = 'work';
                 activeTargetMs = roundDurationSec * 1000;
                 remainingMs = activeTargetMs;
+                lastTimestamp = null;
                 playPhaseTransitionChime(false);
 
                 if (stopAfterRest) {
                     pauseTimer();
-                    updateUI();
                 } else {
-                    lastTimestamp = null;
                     updateUI();
-                    animationFrameId = requestAnimationFrame(timerLoop);
                 }
             }
         }
 
+        let lastToggleTime = 0;
+
         function toggleTimer() {
+            const now = performance.now();
+            // Debounce rapid / synthetic duplicate clicks (within 160ms)
+            if (now - lastToggleTime < 160) {
+                return;
+            }
+            lastToggleTime = now;
+
             getAudioContext();
 
             if (isFinished) {
@@ -1307,6 +1313,11 @@
 
         function startTimer() {
             if (isRunning) return;
+            // Ensure any existing frame is cleanly cancelled
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
             isRunning = true;
             requestWakeLock();
             if (heartbeatWorker) heartbeatWorker.postMessage('start');
@@ -1318,7 +1329,6 @@
         }
 
         function pauseTimer() {
-            if (!isRunning) return;
             isRunning = false;
             releaseWakeLock();
             if (heartbeatWorker) heartbeatWorker.postMessage('stop');
@@ -1364,11 +1374,13 @@
         }
 
         primaryBtn.addEventListener('click', (e) => {
+            e.currentTarget.blur(); // Blur button to prevent Spacebar double-activation
             createRipple(e);
             toggleTimer();
         });
 
         resetBtn.addEventListener('click', (e) => {
+            e.currentTarget.blur();
             createRipple(e);
             resetTimer();
         });
@@ -1449,8 +1461,12 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT') return;
-            if (e.code === 'Space') {
+            if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
                 e.preventDefault();
+                // Prevent focused button from firing a duplicate click event on Space
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+                    document.activeElement.blur();
+                }
                 toggleTimer();
             } else if (e.key === 'r' || e.key === 'R') {
                 resetTimer();
